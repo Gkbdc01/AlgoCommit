@@ -5,29 +5,33 @@ let submissionInProgress = false;
 let problemData = { title: null, language: null }; // Variable to hold pre-scraped data
 
 // Function to scrape static data as soon as the page is stable
+// Function to scrape static data as soon as the page is stable
 const preScrape = () => {
-    let attempts = 0;
-    const maxAttempts = 50; // 10 seconds
-    const poll = setInterval(() => {
-        const titleElement = document.querySelector('a.truncate[href^="/problems/"]');
-        const languageElement = document.querySelector('button[aria-haspopup="dialog"]');
+    let attempts = 0;
+    const maxAttempts = 50; // 10 seconds
+    const poll = setInterval(() => {
+        const titleElement = document.querySelector('a.truncate[href^="/problems/"]');
+        // CORRECTED: The selector for the language is now the editor div
+        const languageElement = document.querySelector('div[data-mode-id]');
 
-        if (titleElement && languageElement) {
-            clearInterval(poll);
-            const rawTitle = titleElement.innerText;
-            problemData.title = rawTitle.includes('. ') ? rawTitle.split('. ')[1].trim() : rawTitle.trim();
-            problemData.language = languageElement.firstChild.textContent.trim();
-            console.log("AlgoCommit: Pre-scraped problem data:", problemData);
-        }
+        if (titleElement && languageElement) {
+            clearInterval(poll);
+            const rawTitle = titleElement.innerText;
+            problemData.title = rawTitle.includes('. ') ? rawTitle.split('. ')[1].trim() : rawTitle.trim();
+            
+            // CORRECTED: We now read the 'data-mode-id' attribute directly
+            problemData.language = languageElement.getAttribute('data-mode-id');
+            
+            console.log("AlgoCommit: Pre-scraped problem data:", problemData);
+        }
 
-        attempts++;
-        if (attempts >= maxAttempts) {
-            clearInterval(poll);
-            console.error("AlgoCommit: Timed out pre-scraping title and language.");
-        }
-    }, 200);
+        attempts++;
+        if (attempts >= maxAttempts) {
+            clearInterval(poll);
+            console.error("AlgoCommit: Timed out pre-scraping title and language.");
+        }
+    }, 200);
 };
-
 // Function to scrape only the code after submission
 const scrapeCodeAndFinalize = () => {
     let attempts = 0;

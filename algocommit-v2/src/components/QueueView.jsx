@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
-// Now accepts onRemove prop
 const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
   const [status, setStatus] = useState('');
   const [repoPath, setRepoPath] = useState('Loading...');
   const [selected, setSelected] = useState(new Set());
 
+  // This hook now automatically selects all items when the queue changes.
   useEffect(() => {
-    // We now ask for 'github_folder' as well
+    const allIndices = new Set(solutionQueue.map((_, index) => index));
+    setSelected(allIndices);
+  }, [solutionQueue]);
+
+  useEffect(() => {
+    // This hook for fetching the repo path remains the same.
     chrome.storage.local.get(['github_owner', 'github_repo', 'github_folder'], (result) => {
       if (result.github_owner && result.github_repo) {
         let path = `${result.github_owner}/${result.github_repo}`;
-        // If a folder exists, add it to the path
         if (result.github_folder) {
           path += `/${result.github_folder}`;
         }
@@ -31,16 +35,18 @@ const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
     }
     setSelected(newSelection);
   };
-
+  
   const handlePush = async () => {
     if (selected.size === 0) {
       setStatus('Please select items to push.');
       setTimeout(() => setStatus(''), 3000);
       return;
     }
+
     setStatus('Pushing...');
     const { github_owner, github_repo } = await chrome.storage.local.get(['github_owner', 'github_repo']);
     const selectedSolutions = solutionQueue.filter((_, index) => selected.has(index));
+
     chrome.runtime.sendMessage(
       { 
         action: 'push_selected_to_github', 
@@ -52,7 +58,7 @@ const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
       },
       (response) => {
         setStatus(response ? response.message : 'An unknown error occurred.');
-        setSelected(new Set());
+        setSelected(new Set()); // Clear selection after push
         setTimeout(() => setStatus(''), 3000);
       }
     );
@@ -60,9 +66,7 @@ const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
 
   return (
     <div>
-      {/* The settings icon has been removed from here */}
       <h2>Queued Solutions</h2>
-
       <ul className="queue-list">
         {solutionQueue.length > 0 ? (
           solutionQueue.map((item, index) => (
@@ -73,7 +77,6 @@ const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
                 onChange={() => handleSelection(index)}
               />
               <span className="item-title">{item.title}</span>
-              {/* New remove button for each item */}
               <button onClick={() => onRemove(index)} className="remove-button" title="Remove Item">
                 🗑️
               </button>
@@ -84,9 +87,18 @@ const QueueView = ({ solutionQueue, onLogout, onEditSettings, onRemove }) => {
         )}
       </ul>
 
+      {/* This section contains the push button */}
       <div className="actions">
-        {/* ... buttons are the same ... */}
+        <button 
+          className="button" 
+          onClick={handlePush} 
+          disabled={status === 'Pushing...' || selected.size === 0}
+        >
+          {status || `Push ${selected.size} Selected`}
+        </button>
+        <button className="button-secondary" onClick={onLogout}>Logout</button>
       </div>
+
       <div className="repo-path">
         Pushing to: <button onClick={onEditSettings} className="link-button">{repoPath}</button>
       </div>
