@@ -1,24 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const QueueView = ({ solutionQueue }) => {
-  const [status, setStatus] = useState(''); // To show messages like "Pushing..."
+const QueueView = ({ solutionQueue, onLogout, onEditSettings }) => {
+  const [status, setStatus] = useState('');
+  const [repoPath, setRepoPath] = useState('Loading...');
 
-  const handlePush = () => {
+  useEffect(() => {
+    chrome.storage.local.get(['github_owner', 'github_repo'], (result) => {
+      if (result.github_owner && result.github_repo) {
+        setRepoPath(`${result.github_owner}/${result.github_repo}`);
+      } else {
+        setRepoPath('Not configured');
+      }
+    });
+  }, [solutionQueue]); // Re-fetch if queue changes, in case settings were changed
+
+  const handlePush = async () => {
     setStatus('Pushing...');
-
-    // IMPORTANT: Replace these with your actual GitHub details
-    const owner = 'YOUR_GITHUB_USERNAME';
-    const repo = 'YOUR_REPO_NAME';
-
+    const { github_owner, github_repo } = await chrome.storage.local.get(['github_owner','github_repo']);
+    if (!github_owner || !github_repo) {
+      setStatus('Error: GitHub details not set.');
+      setTimeout(() => setStatus(''), 3000);
+      return;
+    }
     chrome.runtime.sendMessage(
-      { action: 'push_to_github', data: { owner, repo } },
+      { action: 'push_to_github', data: { owner: github_owner, repo: github_repo } },
       (response) => {
-        if (response && response.status === 'success') {
-          setStatus('Successfully pushed!');
-        } else {
-          setStatus(response ? response.message : 'An unknown error occurred.');
-        }
-        // Clear the status message after a few seconds
+        setStatus(response ? response.message : 'An unknown error occurred.');
         setTimeout(() => setStatus(''), 3000);
       }
     );
@@ -34,9 +41,17 @@ const QueueView = ({ solutionQueue }) => {
           <li className="list-item">No solutions in queue.</li>
         )}
       </ul>
-      <button className="button" onClick={handlePush} disabled={status === 'Pushing...'}>
-        {status || 'Push Session to GitHub'}
-      </button>
+      <div className="actions">
+        <button className="button" onClick={handlePush} disabled={status === 'Pushing...'}>
+          {status || 'Push to GitHub'}
+        </button>
+        <button className="button-secondary" onClick={onLogout}>
+          Logout
+        </button>
+      </div>
+      <div className="repo-path">
+        Pushing to: <button onClick={onEditSettings} className="link-button">{repoPath}</button>
+      </div>
     </div>
   );
 };

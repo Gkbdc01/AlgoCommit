@@ -1,64 +1,124 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  width: 350px;
+  min-height: 200px;
+  background-color: #f9f9f9;
 }
 
 .container {
-  width: 300px;
   padding: 16px;
   text-align: center;
-  background-color: #f9f9f9;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-left: 8px;
-  color: #333;
-}
-
-.button {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 16px;
-}
-
-.button:hover {
-    background-color: #0056b3;
+  font-size: 24px;
+  margin: 0;
 }
 
 .queue-list {
   list-style-type: none;
   padding: 0;
-  text-align: left;
-  max-height: 150px;
+  margin: 20px 0;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: 5px;
-  margin-top: 16px;
-  background-color: white;
 }
 
 .list-item {
-  padding: 8px 12px;
+  padding: 10px;
   border-bottom: 1px solid #eee;
+  text-align: left;
 }
 
 .list-item:last-child {
   border-bottom: none;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.button, .button-secondary {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.button {
+  background-color: #007bff;
+  color: white;
+}
+.button:hover { background-color: #0056b3; }
+.button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+
+.button-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+.button-secondary:hover { background-color: #5a6268; }
+
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.input-field {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.repo-path {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.status-message {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
 }
