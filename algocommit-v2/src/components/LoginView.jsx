@@ -7,6 +7,7 @@ const LoginView = ({ onLogin }) => {
       <button className="button" onClick={onLogin}>
         Login with GitHub Token
       </button>
+      <p className="token-info">Your token needs the full 'repo' scope.</p>
     </div>
   );
 };

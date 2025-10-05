@@ -6,17 +6,17 @@ import './App.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isRepoSet, setIsRepoSet] = useState(false);
+  const [isEditingRepo, setIsEditingRepo] = useState(false);
   const [solutionQueue, setSolutionQueue] = useState([]);
 
   useEffect(() => {
-    chrome.storage.local.get(['github_token', 'github_owner', 'github_repo', 'github_folder', 'solution_queue'], (result) => {
+    chrome.storage.local.get(['github_token', 'github_repo', 'solution_queue'], (result) => {
       setIsLoggedIn(!!result.github_token);
-      setIsConfigured(!!result.github_owner && !!result.github_repo);
+      setIsRepoSet(!!result.github_repo);
       setSolutionQueue(result.solution_queue || []);
     });
-    
+
     const handleStorageChange = (changes, area) => {
       if (area === 'local' && changes.solution_queue) {
         setSolutionQueue(changes.solution_queue.newValue || []);
@@ -26,41 +26,69 @@ function App() {
     return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
+  const handleRemoveItem = (indexToRemove) => {
+    const newQueue = solutionQueue.filter((_, index) => index !== indexToRemove);
+    setSolutionQueue(newQueue);
+    chrome.storage.local.set({ solution_queue: newQueue });
+  };
+
   const handleLogin = () => {
     const token = prompt("Please enter your GitHub Personal Access Token with 'repo' scope:");
-    if (token) {
-      chrome.storage.local.set({ github_token: token }, () => setIsLoggedIn(true));
-    }
+    if (!token) return;
+
+    chrome.runtime.sendMessage({ action: 'fetch_user', token: token }, (response) => {
+      if (response && response.status === 'success') {
+        const { username } = response.data;
+        chrome.storage.local.set({ github_token: token, github_owner: username }, () => {
+          setIsLoggedIn(true);
+        });
+      } else {
+        alert("Login failed: " + (response ? response.message : "Invalid Token or Network Error"));
+      }
+    });
   };
 
   const handleLogout = () => {
     chrome.storage.local.remove(['github_token', 'github_owner', 'github_repo', 'github_folder'], () => {
       setIsLoggedIn(false);
-      setIsConfigured(false);
+      setIsRepoSet(false);
     });
   };
 
-  const handleSaveSettings = ({ owner, repo, folder }) => {
-    chrome.storage.local.set({ github_owner: owner, github_repo: repo, github_folder: folder }, () => {
-      setIsConfigured(true);
-      setIsEditing(false);
+  const handleSaveRepoSettings = ({ repo, folder }) => {
+    chrome.storage.local.set({ github_repo: repo, github_folder: folder }, () => {
+      setIsRepoSet(true);
+      setIsEditingRepo(false);
     });
   };
   
-  const handleEditSettings = () => {
-    setIsEditing(true);
+  const handleEditRepoSettings = () => {
+    setIsEditingRepo(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingRepo(false);
   };
 
   const renderContent = () => {
     if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
-    if (!isConfigured || isEditing) return <SetupView onSave={handleSaveSettings} />;
-    return <QueueView solutionQueue={solutionQueue} onLogout={handleLogout} onEditSettings={handleEditSettings} />;
+    if (!isRepoSet || isEditingRepo) {
+      const cancelFunc = isEditingRepo ? handleCancelEdit : null;
+      return <SetupView onSave={handleSaveRepoSettings} onCancel={cancelFunc} />;
+    }
+    return <QueueView 
+      solutionQueue={solutionQueue} 
+      onLogout={handleLogout} 
+      onEditSettings={handleEditRepoSettings}
+      onRemove={handleRemoveItem} 
+    />;
   };
 
   return (
     <div className="container">
       <div className="header">
-        <img src="/icons/icon48.png" alt="AlgoCommit Logo" width="32" height="32" />
+        {/* Corrected image path (no leading slash) */}
+        <img src="icons/icon48.png" alt="AlgoCommit Logo" width="32" height="32" />
         <h1 className="title">AlgoCommit</h1>
       </div>
       {renderContent()}

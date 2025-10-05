@@ -106,3 +106,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+async function fetchUserDetails(token) {
+  const url = 'https://api.github.com/user';
+  try {
+    const response = await fetch(url, {
+      headers: { 'Authorization': `token ${token}` }
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`GitHub API Error: ${errorData.message}`);
+    }
+    const userData = await response.json();
+    return { status: 'success', data: { username: userData.login } };
+  } catch (error) {
+    console.error("AlgoCommit: Error fetching user details.", error);
+    return { status: 'error', message: error.message };
+  }
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'fetch_user') {
+    fetchUserDetails(request.token).then(sendResponse);
+    return true; 
+  }
+});
